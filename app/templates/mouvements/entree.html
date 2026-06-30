@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block titre %}Entree de stock{% endblock %}
+{% block content %}
+<h3 class="mb-4">Enregistrer une entree de stock</h3>
+<form method="post" class="card card-kpi p-4" style="max-width: 760px;">
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label">Produit</label>
+            <select name="produit_id" class="form-select" required>
+                <option value="" disabled selected>Choisir un produit...</option>
+                {% for p in produits %}
+                    <option value="{{ p.id }}">{{ p.code }} - {{ p.designation }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Depot</label>
+            <select name="depot_id" class="form-select" required>
+                <option value="" disabled selected>Choisir un depot...</option>
+                {% for d in depots %}
+                    <option value="{{ d.id }}">{{ d.code }} - {{ d.nom }}</option>
+                {% endfor %}
+            </select>
+            {% if not depots %}
+                <div class="form-text text-danger">Aucun depot avec droit d'ecriture. Contactez un administrateur.</div>
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Quantite</label>
+            <input type="number" step="0.001" min="0.001" name="quantite" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Unite de saisie</label>
+            <select name="unite" class="form-select">
+                <option value="GESTION">Unite de gestion</option>
+                <option value="ACHAT">Unite d'achat</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Cout unitaire (selon unite de saisie)</label>
+            <input type="number" step="0.0001" min="0" name="cout_unitaire" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">N° de lot (auto si vide)</label>
+            <input type="text" name="numero_lot" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Date d'entree</label>
+            <input type="date" name="date_entree" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Date d'expiration (optionnel)</label>
+            <input type="date" name="date_expiration" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Origine (fournisseur)</label>
+            <select name="tiers_id" class="form-select">
+                <option value="">Non precisee</option>
+                {% for t in tiers_disponibles %}
+                    <option value="{{ t.id }}">{{ t.code }} - {{ t.nom }}</option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Permet d'analyser les entrees par fournisseur. Gerable dans Parametres > Tiers.</div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Reference (bon de commande/livraison)</label>
+            <input type="text" name="reference" class="form-control">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label">Motif / commentaire</label>
+            <input type="text" name="motif" class="form-control">
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-success">Enregistrer l'entree</button>
+    </div>
+</form>
+{% endblock %}

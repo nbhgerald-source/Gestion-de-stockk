@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titre %}Produits{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Produits</h3>
+    {% if current_user.est_admin %}
+        <a href="{{ url_for('produits.nouveau') }}" class="btn btn-primary">+ Nouveau produit</a>
+    {% endif %}
+</div>
+
+<form class="row g-2 mb-3" method="get">
+    <div class="col-auto">
+        <select name="type" class="form-select" onchange="this.form.submit()">
+            <option value="">Tous les types</option>
+            {% for code, libelle in types_produit %}
+                <option value="{{ code }}" {% if code == type_filtre %}selected{% endif %}>{{ libelle }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<div class="card card-kpi">
+<table class="table table-sm table-hover mb-0">
+    <thead>
+    <tr>
+        <th>Code</th><th>Designation</th><th>Type</th>
+        <th class="text-end">Stock (unite gestion)</th>
+        <th class="text-end">Seuil securite</th>
+        <th class="text-end">PMP</th>
+        <th class="text-end">Valeur stock</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for p in produits %}
+        <tr class="{% if p.en_rupture %}table-danger{% elif p.en_alerte %}table-warning{% endif %}">
+            <td>{{ p.code }}</td>
+            <td><a href="{{ url_for('produits.detail', produit_id=p.id) }}">{{ p.designation }}</a></td>
+            <td>{{ p.type_produit | libelle_type }}</td>
+            <td class="text-end">{{ p.quantite_stock | fmt_qte }} {{ p.unite_gestion.code }}</td>
+            <td class="text-end">{{ p.stock_securite | fmt_qte }}</td>
+            <td class="text-end">{{ p.pmp | fmt_montant }}</td>
+            <td class="text-end">{{ p.valeur_stock | fmt_montant }}</td>
+            <td>
+                {% if current_user.est_admin %}
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('produits.modifier', produit_id=p.id) }}">Modifier</a>
+                {% endif %}
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="8" class="text-center text-muted py-4">Aucun produit. Commencez par en creer un.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

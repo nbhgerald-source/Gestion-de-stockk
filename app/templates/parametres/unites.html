@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titre %}Unites de mesure{% endblock %}
+{% block content %}
+<h3 class="mb-4">Unites de mesure</h3>
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card card-kpi p-3">
+            <h5>Ajouter une unite</h5>
+            <form method="post">
+                <div class="mb-2">
+                    <label class="form-label">Code (ex: KG, PCE, CARTON)</label>
+                    <input type="text" name="code" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Libelle</label>
+                    <input type="text" name="libelle" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card card-kpi p-3">
+            <table class="table table-sm">
+                <thead><tr><th>Code</th><th>Libelle</th></tr></thead>
+                <tbody>
+                {% for u in unites %}
+                    <tr><td>{{ u.code }}</td><td>{{ u.libelle }}</td></tr>
+                {% else %}
+                    <tr><td colspan="2" class="text-center text-muted py-3">Aucune unite. Ajoutez-en une (ex: KG, PCE, L, CARTON).</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

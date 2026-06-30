@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titre %}Importer des produits{% endblock %}
+{% block content %}
+<h3 class="mb-4">Importer des produits (CSV)</h3>
+
+<div class="card card-kpi p-4 mb-4" style="max-width: 760px;">
+    <p>
+        Chargez un fichier CSV (delimiteur <code>;</code>, encodage UTF-8) contenant l'ensemble
+        des articles a creer. Telechargez d'abord le modele pour respecter le format attendu :
+    </p>
+    <p>
+        <a class="btn btn-outline-secondary" href="{{ url_for('produits.modele_import') }}">
+            Telecharger le modele CSV
+        </a>
+    </p>
+    <ul class="text-muted small">
+        <li><code>type_produit</code> : MATIERE_PREMIERE, ACCESSOIRE, SEMI_FINI, RESIDUEL ou PRODUIT_FINI.</li>
+        <li><code>unite_achat_code</code> / <code>unite_gestion_code</code> : codes d'unites existantes (Parametres &gt; Unites de mesure).</li>
+        <li><code>facteur_conversion</code> : nombre d'unites de gestion par unite d'achat (1 si identiques).</li>
+        <li>Un produit dont le <code>code</code> existe deja sera rejete (aucun doublon).</li>
+        <li>En cas d'erreur sur une seule ligne, aucun produit n'est cree (import tout-ou-rien).</li>
+    </ul>
+    <form method="post" enctype="multipart/form-data" class="mt-3">
+        <div class="mb-3">
+            <label class="form-label">Fichier CSV</label>
+            <input type="file" name="fichier" accept=".csv" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Importer</button>
+    </form>
+</div>
+
+{% if resultats %}
+    {% if resultats.erreurs %}
+        <div class="card card-kpi p-3" style="max-width: 760px;">
+            <h5 class="text-danger">Erreurs detectees</h5>
+            <ul class="mb-0">
+                {% for erreur in resultats.erreurs %}
+                    <li>{{ erreur }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="card card-kpi p-3" style="max-width: 760px;">
+            <h5 class="text-success">Produits crees</h5>
+            <p class="mb-0">{{ resultats.crees | join(', ') }}</p>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

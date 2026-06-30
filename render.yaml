@@ -1,0 +1,49 @@
+# Fichier Blueprint Render — déploiement automatique de l'application
+# SIPACO SARL - Gestion de Stock doolee.
+#
+# Comment l'utiliser :
+#   1. Pousser ce projet sur GitHub (un dépôt public ou privé).
+#   2. Sur https://dashboard.render.com → "New" → "Blueprint" → lier votre dépôt.
+#   3. Render lira ce fichier et créera le service web + la base PostgreSQL.
+#   4. Après le premier déploiement, changez ADMIN_MOTDEPASSE_DEFAUT dans
+#      Render → votre service → "Environment" (le compte admin par défaut
+#      sera créé avec ce mot de passe au premier démarrage).
+
+services:
+  - type: web
+    name: sipaco-stock-doolee
+    env: python
+    region: frankfurt           # choisir la région la plus proche
+    plan: free                  # passer à "starter" pour plus de ressources
+    buildCommand: pip install -r requirements.txt -r requirements-postgresql.txt
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    healthCheckPath: /auth/connexion
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true     # Render génère une valeur aléatoire sécurisée
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sipaco-stock-db
+          property: connectionString
+      - key: ADMIN_EMAIL_DEFAUT
+        value: admin@sipaco.com
+      - key: ADMIN_MOTDEPASSE_DEFAUT
+        value: ChangerCeMDP2024!   # À CHANGER dans Render > Environment avant le 1er démarrage
+      - key: MAIL_SERVEUR
+        value: ""               # Laisser vide ou configurer votre SMTP
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_UTILISATEUR
+        value: ""
+      - key: MAIL_MOT_DE_PASSE
+        value: ""
+      - key: MAIL_EXPEDITEUR
+        value: "stock@sipaco.com"
+      - key: MAIL_USE_TLS
+        value: "1"
+
+databases:
+  - name: sipaco-stock-db
+    databaseName: sipaco_stock
+    user: sipaco_user
+    plan: free                  # PostgreSQL gratuit (supprimé après 90 jours sur Render Free)

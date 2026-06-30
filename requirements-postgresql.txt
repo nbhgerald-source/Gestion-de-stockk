@@ -1,0 +1,12 @@
+# Dependance supplementaire necessaire uniquement pour se connecter a une base
+# PostgreSQL (deploiement cloud avec DATABASE_URL=postgresql://...).
+# Inutile en local avec SQLite (configuration par defaut) : pas besoin de l'installer
+# sur un poste de developpement Windows sans compilateur C++.
+#
+# Installation : pip install -r requirements-postgresql.txt
+#
+# Si la compilation echoue sous Windows (erreur "Microsoft Visual C++ 14.0 ... required"),
+# installer plutot psycopg (v3) qui fournit des roues precompilees :
+#   pip install "psycopg[binary]"
+# et adapter DATABASE_URL en consequence (postgresql+psycopg://...).
+psycopg2-binary==2.9.9

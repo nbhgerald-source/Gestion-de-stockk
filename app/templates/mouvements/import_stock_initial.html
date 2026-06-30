@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block titre %}Importer le stock initial{% endblock %}
+{% block content %}
+<h3 class="mb-4">Importer le stock initial (CSV)</h3>
+
+<div class="card card-kpi p-4 mb-4" style="max-width: 760px;">
+    <p>
+        Chargez un fichier CSV (delimiteur <code>;</code>, encodage UTF-8) pour enregistrer les
+        quantites de depart de chaque produit, depot par depot. Chaque ligne cree une entree de
+        stock (un lot), comme une saisie manuelle d'entree. Telechargez d'abord le modele :
+    </p>
+    <p>
+        <a class="btn btn-outline-secondary" href="{{ url_for('mouvements.modele_stock_initial') }}">
+            Telecharger le modele CSV
+        </a>
+    </p>
+    <ul class="text-muted small">
+        <li><code>code_produit</code> : code d'un produit existant (creez/importez vos produits avant ceci).</li>
+        <li><code>depot_code</code> : code d'un depot existant (Parametres &gt; Depots).</li>
+        <li><code>quantite</code> / <code>cout_unitaire</code> : exprimes dans l'unite de GESTION du produit.</li>
+        <li><code>date_entree</code> : optionnelle (AAAA-MM-JJ), aujourd'hui par defaut.</li>
+        <li><code>numero_lot</code> / <code>reference</code> : optionnels.</li>
+        <li>En cas d'erreur sur une seule ligne, aucune entree n'est enregistree (import tout-ou-rien).</li>
+    </ul>
+    <form method="post" enctype="multipart/form-data" class="mt-3">
+        <div class="mb-3">
+            <label class="form-label">Fichier CSV</label>
+            <input type="file" name="fichier" accept=".csv" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Importer</button>
+    </form>
+</div>
+
+{% if resultats %}
+    {% if resultats.erreurs %}
+        <div class="card card-kpi p-3" style="max-width: 760px;">
+            <h5 class="text-danger">Erreurs detectees</h5>
+            <ul class="mb-0">
+                {% for erreur in resultats.erreurs %}
+                    <li>{{ erreur }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="card card-kpi p-3" style="max-width: 760px;">
+            <h5 class="text-success">Entrees enregistrees</h5>
+            <p class="mb-0">{{ resultats.importes | join(', ') }}</p>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

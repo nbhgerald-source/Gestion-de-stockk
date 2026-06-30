@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titre %}Tiers{% endblock %}
+{% block content %}
+<h3 class="mb-4">Tiers (fournisseurs / clients-consommateurs)</h3>
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card card-kpi p-3">
+            <h5>Ajouter un tiers</h5>
+            <form method="post">
+                <div class="mb-2">
+                    <label class="form-label">Code</label>
+                    <input type="text" name="code" class="form-control" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Nom</label>
+                    <input type="text" name="nom" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select name="type_tiers" class="form-select">
+                        {% for code, libelle in types_tiers %}
+                            <option value="{{ code }}">{{ libelle }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">
+                        Fournisseur : utilisable comme origine d'une entree.
+                        Client / consommateur : utilisable comme destinataire d'une sortie.
+                        Autre : service interne, atelier... utilisable des deux cotes.
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card card-kpi p-3">
+            <table class="table table-sm">
+                <thead><tr><th>Code</th><th>Nom</th><th>Type</th></tr></thead>
+                <tbody>
+                {% for t in tiers_liste %}
+                    <tr>
+                        <td>{{ t.code }}</td>
+                        <td>{{ t.nom }}</td>
+                        <td>
+                            {% if t.type_tiers == 'FOURNISSEUR' %}<span class="badge bg-info">Fournisseur</span>
+                            {% elif t.type_tiers == 'CLIENT' %}<span class="badge bg-warning text-dark">Client / consommateur</span>
+                            {% else %}<span class="badge bg-secondary">Autre</span>{% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="3" class="text-center text-muted py-3">Aucun tiers. Ajoutez vos fournisseurs et clients/consommateurs.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

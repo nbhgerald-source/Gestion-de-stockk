@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block titre %}{% if produit %}Modifier produit{% else %}Nouveau produit{% endif %}{% endblock %}
+{% block content %}
+<h3 class="mb-4">{% if produit %}Modifier le produit {{ produit.code }}{% else %}Nouveau produit{% endif %}</h3>
+
+{% if not unites %}
+    <div class="alert alert-warning">
+        Aucune unite de mesure n'existe encore. <a href="{{ url_for('parametres.unites') }}">Creez-en une d'abord</a>.
+    </div>
+{% endif %}
+
+<form method="post" class="card card-kpi p-4" style="max-width: 720px;">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Code produit</label>
+            {% if produit %}
+                <input type="text" class="form-control" value="{{ produit.code }}" disabled>
+            {% else %}
+                <input type="text" name="code" class="form-control" required>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Type de produit</label>
+            <select name="type_produit" class="form-select" required>
+                {% for code, libelle in types_produit %}
+                    <option value="{{ code }}" {% if produit and produit.type_produit == code %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Designation</label>
+            <input type="text" name="designation" class="form-control" required
+                   value="{{ produit.designation if produit else '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Unite d'achat</label>
+            <select name="unite_achat_id" class="form-select" required>
+                {% for u in unites %}
+                    <option value="{{ u.id }}" {% if produit and produit.unite_achat_id == u.id %}selected{% endif %}>{{ u.code }} - {{ u.libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Unite de gestion de stock</label>
+            <select name="unite_gestion_id" class="form-select" required>
+                {% for u in unites %}
+                    <option value="{{ u.id }}" {% if produit and produit.unite_gestion_id == u.id %}selected{% endif %}>{{ u.code }} - {{ u.libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Facteur de conversion (colisage)</label>
+            <input type="number" step="0.001" min="0.001" name="facteur_conversion" class="form-control"
+                   value="{{ produit.facteur_conversion if produit else 1 }}" required>
+            <div class="form-text">Nombre d'unites de gestion contenues dans 1 unite d'achat (ex: 1 carton = 24 pieces).</div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Libelle du colisage</label>
+            <input type="text" name="libelle_colisage" class="form-control" placeholder="ex: Carton de 24"
+                   value="{{ produit.libelle_colisage if produit else '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Stock de securite (unite de gestion)</label>
+            <input type="number" step="0.001" min="0" name="stock_securite" class="form-control"
+                   value="{{ produit.stock_securite if produit else 0 }}">
+        </div>
+        {% if produit %}
+        <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="actif" id="actif" {% if produit.actif %}checked{% endif %}>
+                <label class="form-check-label" for="actif">Produit actif</label>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="{{ url_for('produits.liste') }}" class="btn btn-link">Annuler</a>
+    </div>
+</form>
+{% endblock %}

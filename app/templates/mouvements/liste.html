@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block titre %}Mouvements{% endblock %}
+{% block content %}
+<h3 class="mb-4">Historique des mouvements</h3>
+
+<form class="row g-2 mb-3" method="get">
+    <div class="col-auto">
+        <select name="type" class="form-select" onchange="this.form.submit()">
+            <option value="">Tous les types</option>
+            {% for code, libelle in types_mouvement %}
+                <option value="{{ code }}" {% if code == type_filtre %}selected{% endif %}>{{ libelle }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="produit_id" class="form-select" onchange="this.form.submit()">
+            <option value="">Tous les produits</option>
+            {% for p in produits %}
+                <option value="{{ p.id }}" {% if produit_id_filtre == p.id %}selected{% endif %}>{{ p.code }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="tiers_id" class="form-select" onchange="this.form.submit()">
+            <option value="">Tous les tiers</option>
+            {% for t in tous_tiers %}
+                <option value="{{ t.id }}" {% if tiers_id_filtre == t.id %}selected{% endif %}>{{ t.code }} - {{ t.nom }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<div class="card card-kpi">
+<table class="table table-sm table-hover mb-0">
+    <thead>
+    <tr>
+        <th>Date</th><th>Produit</th><th>Type</th>
+        <th class="text-end">Quantite</th><th class="text-end">Cout unit.</th>
+        <th class="text-end">Valeur</th><th class="text-end">Stock apres</th>
+        <th>Tiers</th><th>Reference</th><th>Motif</th><th>Statut</th><th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for m in mouvements %}
+        <tr class="{% if m.annule %}text-muted{% endif %}">
+            <td>{{ m.date_mouvement.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td><a href="{{ url_for('produits.detail', produit_id=m.produit_id) }}">{{ m.produit.code }}</a></td>
+            <td>
+                {% if m.type_mouvement == 'ENTREE' %}<span class="badge bg-success">Entree</span>
+                {% elif m.type_mouvement == 'SORTIE' %}<span class="badge bg-danger">Sortie</span>
+                {% elif m.type_mouvement == 'ANNULATION' %}<span class="badge bg-warning text-dark">Annulation</span>
+                {% else %}<span class="badge bg-secondary">{{ m.type_mouvement }}</span>{% endif %}
+            </td>
+            <td class="text-end">{{ m.quantite | fmt_qte }}</td>
+            <td class="text-end">{{ m.cout_unitaire | fmt_montant }}</td>
+            <td class="text-end">{{ m.valeur | fmt_montant }}</td>
+            <td class="text-end">{{ m.stock_apres | fmt_qte }}</td>
+            <td>{{ m.tiers.nom if m.tiers else '-' }}</td>
+            <td>{{ m.reference or '-' }}</td>
+            <td>{{ m.motif or '-' }}</td>
+            <td>
+                {% if m.annule %}<span class="badge bg-secondary" title="Annule par {{ m.annule_par }}">Annule</span>
+                {% elif m.est_annulation %}<span class="text-muted small">Compensatoire</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if m.id in mouvements_annulables %}
+                <form method="post" action="{{ url_for('mouvements.annuler', mouvement_id=m.id) }}"
+                      onsubmit="return confirm('Annuler ce mouvement ? Un mouvement compensatoire sera cree.');">
+                    <button type="submit" class="btn btn-sm btn-outline-warning">Annuler</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="12" class="text-center text-muted py-4">Aucun mouvement enregistre.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<p class="text-muted small mt-2">
+    Seul le tout dernier mouvement enregistre pour un produit peut etre annule (pour preserver
+    le PMP et les lots), et seulement par un utilisateur de niveau hierarchique superieur a celui
+    qui l'a saisi.
+</p>
+{% endblock %}

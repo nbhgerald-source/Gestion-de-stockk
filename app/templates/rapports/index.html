@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block titre %}Rapports de stock{% endblock %}
+{% block content %}
+<h3 class="mb-4">Rapports de stock</h3>
+
+<form class="row g-2 mb-4 align-items-end" method="get">
+    <div class="col-auto">
+        <label class="form-label small mb-0">Periode</label>
+        <select name="type_periode" class="form-select">
+            {% for code, libelle in periodes %}
+                <option value="{{ code }}" {% if code == type_periode %}selected{% endif %}>{{ libelle }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label small mb-0">Date de reference</label>
+        <input type="date" name="date_reference" class="form-control" value="{{ date_reference }}">
+    </div>
+    <div class="col-auto">
+        <label class="form-label small mb-0">Categorie de produit</label>
+        <select name="type_produit" class="form-select">
+            <option value="">Toutes les categories</option>
+            {% for code, libelle in types_produit %}
+                <option value="{{ code }}" {% if code == type_produit %}selected{% endif %}>{{ libelle }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label small mb-0">Depot</label>
+        <select name="depot_id" class="form-select">
+            <option value="" {% if not depot_id %}selected{% endif %}>
+                {% if current_user.est_admin %}Consolide (tous depots){% else %}Consolide (mes depots){% endif %}
+            </option>
+            {% for d in depots %}
+                <option value="{{ d.id }}" {% if depot_id == d.id|string %}selected{% endif %}>{{ d.code }} - {{ d.nom }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Generer</button>
+    </div>
+    <div class="col-auto">
+        <a class="btn btn-outline-secondary"
+           href="{{ url_for('rapports.export_csv', type_periode=type_periode, date_reference=date_reference, type_produit=type_produit, depot_id=depot_id) }}">
+           Exporter en CSV
+        </a>
+    </div>
+    <div class="col-auto">
+        <a class="btn btn-outline-primary"
+           href="{{ url_for('rapports.par_tiers', type_periode=type_periode, date_reference=date_reference, depot_id=depot_id) }}">
+           Analyse par tiers
+        </a>
+    </div>
+</form>
+
+<p class="text-muted">
+    Periode : du {{ rapport.periode.debut.strftime('%d/%m/%Y') }} au {{ rapport.periode.fin.strftime('%d/%m/%Y') }}
+    {% if depot_id %}
+        &mdash; Depot : {% for d in depots %}{% if d.id|string == depot_id %}{{ d.code }} - {{ d.nom }}{% endif %}{% endfor %}
+    {% else %}
+        &mdash; Vue consolidee
+    {% endif %}
+</p>
+{% if not depots and not current_user.est_admin %}
+    <div class="alert alert-warning">Vous n'avez d'acces en lecture a aucun depot. Contactez un administrateur.</div>
+{% endif %}
+
+<div class="card card-kpi">
+<table class="table table-sm table-hover mb-0">
+    <thead>
+    <tr>
+        <th>Produit</th>
+        <th class="text-end">Stock initial (qte)</th>
+        <th class="text-end">Stock initial (valeur)</th>
+        <th class="text-end">Entrees (qte)</th>
+        <th class="text-end">Entrees (valeur)</th>
+        <th class="text-end">Sorties (qte)</th>
+        <th class="text-end">Sorties (valeur)</th>
+        <th class="text-end">Stock final (qte)</th>
+        <th class="text-end">Stock final (valeur)</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for ligne in rapport.lignes %}
+        <tr>
+            <td>{{ ligne.produit.code }} - {{ ligne.produit.designation }}</td>
+            <td class="text-end">{{ ligne.stock_initial_qte | fmt_qte }}</td>
+            <td class="text-end">{{ ligne.stock_initial_valeur | fmt_montant }}</td>
+            <td class="text-end text-success">{{ ligne.entrees_qte | fmt_qte }}</td>
+            <td class="text-end text-success">{{ ligne.entrees_valeur | fmt_montant }}</td>
+            <td class="text-end text-danger">{{ ligne.sorties_qte | fmt_qte }}</td>
+            <td class="text-end text-danger">{{ ligne.sorties_valeur | fmt_montant }}</td>
+            <td class="text-end fw-bold">{{ ligne.stock_final_qte | fmt_qte }}</td>
+            <td class="text-end fw-bold">{{ ligne.stock_final_valeur | fmt_montant }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="9" class="text-center text-muted py-4">Aucun produit pour ces criteres.</td></tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr class="table-light fw-bold">
+            <td>Total</td>
+            <td class="text-end">-</td>
+            <td class="text-end">{{ rapport.totaux.stock_initial_valeur | fmt_montant }}</td>
+            <td class="text-end">{{ rapport.totaux.entrees_qte | fmt_qte }}</td>
+            <td class="text-end">{{ rapport.totaux.entrees_valeur | fmt_montant }}</td>
+            <td class="text-end">{{ rapport.totaux.sorties_qte | fmt_qte }}</td>
+            <td class="text-end">{{ rapport.totaux.sorties_valeur | fmt_montant }}</td>
+            <td class="text-end">-</td>
+            <td class="text-end">{{ rapport.totaux.stock_final_valeur | fmt_montant }}</td>
+        </tr>
+    </tfoot>
+</table>
+</div>
+{% endblock %}

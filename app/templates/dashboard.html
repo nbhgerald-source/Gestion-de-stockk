@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord - Gestion de Stock{% endblock %}
+{% block content %}
+<h3 class="mb-4">Tableau de bord</h3>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card card-kpi p-3">
+            <div class="text-muted small">Produits actifs</div>
+            <div class="fs-2 fw-bold">{{ nb_produits }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-kpi p-3">
+            <div class="text-muted small">Valeur totale du stock (PMP)</div>
+            <div class="fs-2 fw-bold">{{ valeur_totale_stock | fmt_montant }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-kpi p-3 {% if nb_alertes %}border-danger{% endif %}">
+            <div class="text-muted small">Alertes stock de securite</div>
+            <div class="fs-2 fw-bold {% if nb_alertes %}text-danger{% endif %}">{{ nb_alertes }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card card-kpi p-3">
+            <h5 class="mb-3">Repartition de la valeur du stock par categorie</h5>
+            <table class="table table-sm">
+                <thead><tr><th>Categorie</th><th class="text-end">Nb produits</th><th class="text-end">Valeur (PMP)</th></tr></thead>
+                <tbody>
+                {% for ligne in repartition_par_type %}
+                    <tr>
+                        <td>{{ ligne.libelle }}</td>
+                        <td class="text-end">{{ ligne.nb_produits }}</td>
+                        <td class="text-end">{{ ligne.valeur | fmt_montant }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card card-kpi p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Alertes de stock de securite</h5>
+                {% if alertes %}
+                    <form method="post" action="{{ url_for('main.envoyer_alertes_email') }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Envoyer par email</button>
+                    </form>
+                {% endif %}
+            </div>
+            {% if not alertes %}
+                <p class="text-muted mb-0">Aucune alerte. Tous les stocks sont au-dessus du seuil de securite.</p>
+            {% else %}
+                <table class="table table-sm">
+                    <thead><tr><th>Produit</th><th class="text-end">Stock</th><th class="text-end">Seuil</th><th></th></tr></thead>
+                    <tbody>
+                    {% for produit in alertes %}
+                        <tr>
+                            <td><a href="{{ url_for('produits.detail', produit_id=produit.id) }}">{{ produit.code }}</a></td>
+                            <td class="text-end">{{ produit.quantite_stock | fmt_qte }}</td>
+                            <td class="text-end">{{ produit.stock_securite | fmt_qte }}</td>
+                            <td class="text-end">
+                                {% if produit.en_rupture %}
+                                    <span class="badge bg-danger badge-alerte">Rupture</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark badge-alerte">Sous seuil</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

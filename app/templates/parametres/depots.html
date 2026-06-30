@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titre %}Depots{% endblock %}
+{% block content %}
+<h3 class="mb-4">Depots</h3>
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card card-kpi p-3">
+            <h5>Ajouter un depot</h5>
+            <form method="post">
+                <div class="mb-2">
+                    <label class="form-label">Code</label>
+                    <input type="text" name="code" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nom</label>
+                    <input type="text" name="nom" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card card-kpi p-3">
+            <table class="table table-sm">
+                <thead><tr><th>Code</th><th>Nom</th></tr></thead>
+                <tbody>
+                {% for d in depots %}
+                    <tr><td>{{ d.code }}</td><td>{{ d.nom }}</td></tr>
+                {% else %}
+                    <tr><td colspan="2" class="text-center text-muted py-3">Aucun depot.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

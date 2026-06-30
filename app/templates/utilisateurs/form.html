@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titre %}{% if utilisateur %}Modifier utilisateur{% else %}Nouvel utilisateur{% endif %}{% endblock %}
+{% block content %}
+<h3 class="mb-4">{% if utilisateur %}Modifier {{ utilisateur.email }}{% else %}Nouvel utilisateur{% endif %}</h3>
+
+<form method="post" class="card card-kpi p-4" style="max-width: 820px;">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Nom</label>
+            <input type="text" name="nom" class="form-control" required value="{{ utilisateur.nom if utilisateur else '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" required value="{{ utilisateur.email if utilisateur else '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">{% if utilisateur %}Nouveau mot de passe (laisser vide pour ne pas changer){% else %}Mot de passe{% endif %}</label>
+            <input type="password" name="mot_de_passe" class="form-control" {% if not utilisateur %}required{% endif %}>
+        </div>
+        <div class="col-md-6 d-flex align-items-end gap-4">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="est_admin" id="est_admin" {% if utilisateur and utilisateur.est_admin %}checked{% endif %}>
+                <label class="form-check-label" for="est_admin">Administrateur (acces total)</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Niveau hierarchique</label>
+            <select name="niveau" class="form-select">
+                {% for valeur, libelle in niveaux %}
+                    <option value="{{ valeur }}" {% if utilisateur and utilisateur.niveau == valeur %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+            <div class="form-text">
+                Sert a autoriser l'annulation d'un mouvement : un utilisateur ne peut annuler que les
+                mouvements saisis par un niveau strictement inferieur au sien. Un administrateur est
+                toujours considere de niveau maximal.
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="actif" id="actif" {% if not utilisateur or utilisateur.actif %}checked{% endif %}>
+                <label class="form-check-label" for="actif">Compte actif</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="recevoir_alertes_email" id="recevoir_alertes_email" {% if utilisateur and utilisateur.recevoir_alertes_email %}checked{% endif %}>
+                <label class="form-check-label" for="recevoir_alertes_email">Recevoir les alertes de stock par email</label>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+    <h5>Droits d'acces par depot</h5>
+    <p class="text-muted small">Sans objet si la case "Administrateur" est cochee (acces total automatique).</p>
+    <table class="table table-sm">
+        <thead><tr><th>Depot</th><th class="text-center">Lecture (consultation)</th><th class="text-center">Ecriture (entrees/sorties)</th></tr></thead>
+        <tbody>
+        {% for d in depots %}
+            <tr>
+                <td>{{ d.code }} - {{ d.nom }}</td>
+                <td class="text-center">
+                    <input type="checkbox" name="lecture_{{ d.id }}" {% if d.id in acces and acces[d.id].peut_lire %}checked{% endif %}>
+                </td>
+                <td class="text-center">
+                    <input type="checkbox" name="ecriture_{{ d.id }}" {% if d.id in acces and acces[d.id].peut_ecrire %}checked{% endif %}>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="3" class="text-center text-muted">Aucun depot. Creez-en un dans Parametres &gt; Depots.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="{{ url_for('utilisateurs.liste') }}" class="btn btn-link">Annuler</a>
+    </div>
+</form>
+{% endblock %}

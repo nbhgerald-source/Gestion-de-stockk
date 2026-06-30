@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block titre %}{{ produit.code }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">{{ produit.code }} - {{ produit.designation }}</h3>
+    {% if current_user.est_admin %}
+        <a href="{{ url_for('produits.modifier', produit_id=produit.id) }}" class="btn btn-outline-secondary">Modifier</a>
+    {% endif %}
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card card-kpi p-3"><div class="text-muted small">Stock actuel</div>
+        <div class="fs-4 fw-bold">{{ produit.quantite_stock | fmt_qte }} {{ produit.unite_gestion.code }}</div></div></div>
+    <div class="col-md-3"><div class="card card-kpi p-3"><div class="text-muted small">PMP</div>
+        <div class="fs-4 fw-bold">{{ produit.pmp | fmt_montant }}</div></div></div>
+    <div class="col-md-3"><div class="card card-kpi p-3"><div class="text-muted small">Valeur stock</div>
+        <div class="fs-4 fw-bold">{{ produit.valeur_stock | fmt_montant }}</div></div></div>
+    <div class="col-md-3"><div class="card card-kpi p-3 {% if produit.en_alerte %}border-danger{% endif %}">
+        <div class="text-muted small">Stock de securite</div>
+        <div class="fs-4 fw-bold {% if produit.en_alerte %}text-danger{% endif %}">{{ produit.stock_securite | fmt_qte }}</div></div></div>
+</div>
+
+<div class="row mb-2 text-muted small">
+    <div class="col-md-3">Type : {{ produit.type_produit | libelle_type }}</div>
+    <div class="col-md-3">Unite d'achat : {{ produit.unite_achat.code }}</div>
+    <div class="col-md-3">Unite de gestion : {{ produit.unite_gestion.code }}</div>
+    <div class="col-md-3">Colisage : {{ produit.libelle_colisage or '-' }} (x{{ produit.facteur_conversion }})</div>
+</div>
+
+<div class="row g-3 mt-3">
+    <div class="col-md-6">
+        <div class="card card-kpi p-3">
+            <h5>Lots en stock (ordre FIFO)</h5>
+            <table class="table table-sm">
+                <thead><tr><th>N° lot</th><th>Date entree</th><th class="text-end">Qte restante</th><th class="text-end">Cout achat</th></tr></thead>
+                <tbody>
+                {% for lot in lots %}
+                    {% if lot.quantite_restante > 0 %}
+                    <tr>
+                        <td>{{ lot.numero_lot }}</td>
+                        <td>{{ lot.date_entree }}</td>
+                        <td class="text-end">{{ lot.quantite_restante | fmt_qte }}</td>
+                        <td class="text-end">{{ lot.cout_unitaire_achat | fmt_montant }}</td>
+                    </tr>
+                    {% endif %}
+                {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">Aucun lot</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-kpi p-3">
+            <h5>Derniers mouvements</h5>
+            <table class="table table-sm">
+                <thead><tr><th>Date</th><th>Type</th><th class="text-end">Qte</th><th class="text-end">Valeur</th></tr></thead>
+                <tbody>
+                {% for m in mouvements %}
+                    <tr>
+                        <td>{{ m.date_mouvement.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ m.type_mouvement }}</td>
+                        <td class="text-end">{{ m.quantite | fmt_qte }}</td>
+                        <td class="text-end">{{ m.valeur | fmt_montant }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">Aucun mouvement</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
