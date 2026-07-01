@@ -25,6 +25,15 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Options du moteur SQLAlchemy — essentielles pour PostgreSQL sur Render :
+    #   pool_pre_ping   : teste la connexion avant usage, reconnecte si morte (SSL stale)
+    #   pool_recycle    : recycle les connexions toutes les 5 min (évite les déconnexions SSL)
+    #   connect_args    : force SSL requis pour PostgreSQL (ignoré par SQLite)
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+    }
+
     # Nombre de decimales utilisees pour l'arrondi des couts/valeurs monetaires
     DECIMALES_VALEUR = 2
     # Nombre de decimales utilisees pour l'arrondi des quantites

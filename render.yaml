@@ -17,7 +17,7 @@ services:
     plan: free                  # passer à "starter" pour plus de ressources
     buildCommand: pip install -r requirements.txt -r requirements-postgresql.txt
     startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
-    healthCheckPath: /auth/connexion
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.0"         # psycopg2-binary n'est pas encore compatible Python 3.14

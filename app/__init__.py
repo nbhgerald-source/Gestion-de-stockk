@@ -1,4 +1,4 @@
-from flask import Flask, flash, redirect, request, url_for
+from flask import Flask, Response, flash, redirect, request, url_for
 from flask_login import current_user
 
 from app.extensions import db, login_manager
@@ -18,7 +18,13 @@ def create_app(config_object="config.Config"):
 
     @login_manager.user_loader
     def charger_utilisateur(user_id):
-        return Utilisateur.query.get(int(user_id))
+        try:
+            return Utilisateur.query.get(int(user_id))
+        except Exception:
+            # Connexion SSL perdue / erreur DB transitoire — on retourne None
+            # (utilisateur non authentifié) plutôt que de lever une exception 500.
+            db.session.rollback()
+            return None
 
     from app.routes.auth import bp as auth_bp
     from app.routes.main import bp as main_bp
@@ -36,11 +42,16 @@ def create_app(config_object="config.Config"):
     app.register_blueprint(rapports_bp, url_prefix="/rapports")
     app.register_blueprint(utilisateurs_bp, url_prefix="/utilisateurs")
 
+    # Endpoint léger pour le health check Render — pas de DB, retour immédiat.
+    @app.route("/health")
+    def health():
+        return Response("ok", status=200, mimetype="text/plain")
+
     # Toute l'application necessite une connexion, a l'exception des routes
     # d'authentification et des fichiers statiques.
     @app.before_request
     def exiger_connexion():
-        endpoints_publics = {"auth.connexion", "static"}
+        endpoints_publics = {"auth.connexion", "health", "static"}
         if request.endpoint in endpoints_publics:
             return None
         if not current_user.is_authenticated:
