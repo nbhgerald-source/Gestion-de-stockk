@@ -1,66 +1,146 @@
 {% extends "base.html" %}
 {% block titre %}Sortie de stock{% endblock %}
 {% block content %}
-<h3 class="mb-4">Enregistrer une sortie de stock</h3>
-<form method="post" class="card card-kpi p-4" style="max-width: 760px;">
-    <div class="row g-3">
-        <div class="col-md-8">
-            <label class="form-label">Produit</label>
-            <select name="produit_id" class="form-select" required>
-                <option value="" disabled selected>Choisir un produit...</option>
-                {% for p in produits %}
-                    <option value="{{ p.id }}">{{ p.code }} - {{ p.designation }} (stock: {{ p.quantite_stock | fmt_qte }} {{ p.unite_gestion.code }})</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Depot</label>
-            <select name="depot_id" class="form-select" required>
-                <option value="" disabled selected>Choisir un depot...</option>
-                {% for d in depots %}
-                    <option value="{{ d.id }}">{{ d.code }} - {{ d.nom }}</option>
-                {% endfor %}
-            </select>
-            {% if not depots %}
-                <div class="form-text text-danger">Aucun depot avec droit d'ecriture. Contactez un administrateur.</div>
-            {% endif %}
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Quantite</label>
-            <input type="number" step="0.001" min="0.001" name="quantite" class="form-control" required>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Unite de saisie</label>
-            <select name="unite" class="form-select">
-                <option value="GESTION">Unite de gestion</option>
-                <option value="ACHAT">Unite d'achat</option>
-            </select>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Consommateur / destinataire</label>
-            <select name="tiers_id" class="form-select">
-                <option value="">Non precise</option>
-                {% for t in tiers_disponibles %}
-                    <option value="{{ t.id }}">{{ t.code }} - {{ t.nom }}</option>
-                {% endfor %}
-            </select>
-            <div class="form-text">Permet d'analyser les sorties par client/consommateur. Gerable dans Parametres > Tiers.</div>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Reference (bon de sortie)</label>
-            <input type="text" name="reference" class="form-control">
-        </div>
-        <div class="col-md-12">
-            <label class="form-label">Motif</label>
-            <input type="text" name="motif" class="form-control" placeholder="ex: production, livraison client...">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">Bon de sortie de stock</h3>
+    <a href="{{ url_for('mouvements.liste') }}" class="btn btn-outline-secondary btn-sm">Retour aux mouvements</a>
+</div>
+
+<form method="post" id="form-sortie">
+
+    {{/* En-tete commun a toutes les lignes */}}
+    <div class="card card-kpi p-4 mb-3">
+        <h6 class="text-muted fw-semibold mb-3">Informations du bon</h6>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Depot <span class="text-danger">*</span></label>
+                <select name="depot_id" class="form-select" required>
+                    <option value="" disabled selected>Choisir...</option>
+                    {% for d in depots %}
+                        <option value="{{ d.id }}">{{ d.code }} &ndash; {{ d.nom }}</option>
+                    {% endfor %}
+                </select>
+                {% if not depots %}
+                    <div class="form-text text-danger">Aucun depot avec droit d'ecriture.</div>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Consommateur / destinataire</label>
+                <select name="tiers_id" class="form-select">
+                    <option value="">Non precise</option>
+                    {% for t in tiers_disponibles %}
+                        <option value="{{ t.id }}">{{ t.code }} &ndash; {{ t.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Reference (bon de sortie)</label>
+                <input type="text" name="reference" class="form-control" placeholder="ex: BS-2024-001">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Motif</label>
+                <input type="text" name="motif" class="form-control" placeholder="ex: production, livraison client...">
+            </div>
         </div>
     </div>
-    <div class="alert alert-info mt-3 mb-0">
-        Les lots seront consommes automatiquement selon la methode FIFO (le lot le plus ancien en premier).
-        La valorisation de la sortie se fait au Cout Unitaire Moyen Pondere (PMP) en vigueur.
+
+    {{/* Tableau des articles */}}
+    <div class="card card-kpi p-4 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="text-muted fw-semibold mb-0">Articles</h6>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="btn-ajouter">
+                &#43; Ajouter un article
+            </button>
+        </div>
+
+        <div class="alert alert-info py-2 mb-3 small">
+            Les lots sont consommes automatiquement en FIFO (plus ancien en premier).
+            La valorisation se fait au Prix Moyen Pondere (PMP) en vigueur.
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="min-width:270px">Produit <span class="text-danger">*</span></th>
+                        <th style="min-width:115px">Quantite <span class="text-danger">*</span></th>
+                        <th style="min-width:130px">Unite</th>
+                        <th style="width:46px"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-lignes">
+
+                    {{/* Ligne modele — cachee, jamais soumise (inputs desactives) */}}
+                    <tr id="ligne-modele" style="display:none" aria-hidden="true">
+                        <td>
+                            <select name="produit_id" class="form-select form-select-sm" disabled>
+                                <option value="" selected>Choisir un produit...</option>
+                                {% for p in produits %}
+                                    <option value="{{ p.id }}">{{ p.code }} &ndash; {{ p.designation }} (stock&nbsp;: {{ p.quantite_stock | fmt_qte }} {{ p.unite_gestion.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" step="0.001" min="0.001" name="quantite" class="form-control form-control-sm" disabled></td>
+                        <td>
+                            <select name="unite" class="form-select form-select-sm" disabled>
+                                <option value="GESTION">Unite gestion</option>
+                                <option value="ACHAT">Unite achat</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-suppr" title="Supprimer">&#x2715;</button>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="mt-4">
-        <button type="submit" class="btn btn-danger">Enregistrer la sortie</button>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger px-4">Enregistrer la sortie</button>
+        <a href="{{ url_for('mouvements.liste') }}" class="btn btn-outline-secondary">Annuler</a>
     </div>
 </form>
+
+<script>
+(function () {
+    const tbody = document.getElementById('tbody-lignes');
+    const modele = document.getElementById('ligne-modele');
+
+    function ajouterLigne() {
+        const clone = modele.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.removeAttribute('aria-hidden');
+        clone.style.display = '';
+
+        // Activer tous les champs de la nouvelle ligne
+        clone.querySelectorAll('input, select').forEach(function (el) {
+            el.disabled = false;
+        });
+
+        // Champs obligatoires
+        clone.querySelector('[name="produit_id"]').required = true;
+        clone.querySelector('[name="quantite"]').required = true;
+
+        clone.querySelector('.btn-suppr').addEventListener('click', function () {
+            supprimerLigne(clone);
+        });
+
+        tbody.appendChild(clone);
+    }
+
+    function supprimerLigne(ligne) {
+        var lignesVisibles = tbody.querySelectorAll('tr:not(#ligne-modele)');
+        if (lignesVisibles.length > 1) {
+            ligne.remove();
+        }
+    }
+
+    document.getElementById('btn-ajouter').addEventListener('click', ajouterLigne);
+
+    // Demarrer avec une premiere ligne vide
+    ajouterLigne();
+})();
+</script>
 {% endblock %}

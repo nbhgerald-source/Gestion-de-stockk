@@ -162,25 +162,48 @@ def entree():
 
     if request.method == "POST":
         try:
-            produit = Produit.query.get_or_404(int(request.form["produit_id"]))
+            # Champs communs a toutes les lignes du bon
             depot_id = request.form.get("depot_id", type=int) or None
             tiers_id = request.form.get("tiers_id", type=int) or None
+            reference = request.form.get("reference", "").strip() or None
+            motif = request.form.get("motif", "").strip() or None
+            date_entree = _parse_date(request.form.get("date_entree"))
+
             verifier_ecriture_depot(current_user, depot_id)
-            enregistrer_entree(
-                produit,
-                quantite=float(request.form["quantite"]),
-                cout_unitaire=float(request.form["cout_unitaire"]),
-                unite=request.form.get("unite", "GESTION"),
-                numero_lot=request.form.get("numero_lot", "").strip() or None,
-                date_entree=_parse_date(request.form.get("date_entree")),
-                date_expiration=_parse_date(request.form.get("date_expiration")),
-                depot_id=depot_id,
-                tiers_id=tiers_id,
-                reference=request.form.get("reference", "").strip() or None,
-                motif=request.form.get("motif", "").strip() or None,
-                utilisateur=current_user.email,
-            )
-            flash(f"Entree enregistree pour {produit.code}.", "success")
+
+            # Lignes d'articles (listes paralleles)
+            produit_ids = request.form.getlist("produit_id")
+            quantites = request.form.getlist("quantite")
+            unites = request.form.getlist("unite")
+            couts = request.form.getlist("cout_unitaire")
+            lots = request.form.getlist("numero_lot")
+            dates_expir = request.form.getlist("date_expiration")
+
+            # Filtrer les lignes avec un produit selectionne
+            indices = [i for i, pid in enumerate(produit_ids) if pid]
+            if not indices:
+                raise StockError("Veuillez saisir au moins un article.")
+
+            nb = 0
+            for i in indices:
+                produit = Produit.query.get_or_404(int(produit_ids[i]))
+                enregistrer_entree(
+                    produit,
+                    quantite=float(quantites[i]),
+                    cout_unitaire=float(couts[i]),
+                    unite=unites[i] if i < len(unites) else "GESTION",
+                    numero_lot=lots[i].strip() if i < len(lots) and lots[i].strip() else None,
+                    date_entree=date_entree,
+                    date_expiration=_parse_date(dates_expir[i] if i < len(dates_expir) else None),
+                    depot_id=depot_id,
+                    tiers_id=tiers_id,
+                    reference=reference,
+                    motif=motif,
+                    utilisateur=current_user.email,
+                )
+                nb += 1
+
+            flash(f"{nb} entree(s) enregistree(s) avec succes.", "success")
             return redirect(url_for("mouvements.liste"))
         except AccesRefuse as exc:
             flash(str(exc), "danger")
@@ -203,22 +226,43 @@ def sortie():
 
     if request.method == "POST":
         try:
-            produit = Produit.query.get_or_404(int(request.form["produit_id"]))
+            # Champs communs a toutes les lignes du bon
             depot_id = request.form.get("depot_id", type=int) or None
             tiers_id = request.form.get("tiers_id", type=int) or None
+            reference = request.form.get("reference", "").strip() or None
+            motif = request.form.get("motif", "").strip() or None
+
             verifier_ecriture_depot(current_user, depot_id)
-            enregistrer_sortie(
-                produit,
-                quantite=float(request.form["quantite"]),
-                unite=request.form.get("unite", "GESTION"),
-                depot_id=depot_id,
-                tiers_id=tiers_id,
-                reference=request.form.get("reference", "").strip() or None,
-                motif=request.form.get("motif", "").strip() or None,
-                utilisateur=current_user.email,
-            )
-            _alerter_si_sous_seuil(produit)
-            flash(f"Sortie enregistree pour {produit.code}.", "success")
+
+            # Lignes d'articles (listes paralleles)
+            produit_ids = request.form.getlist("produit_id")
+            quantites = request.form.getlist("quantite")
+            unites = request.form.getlist("unite")
+
+            indices = [i for i, pid in enumerate(produit_ids) if pid]
+            if not indices:
+                raise StockError("Veuillez saisir au moins un article.")
+
+            produits_modifies = []
+            for i in indices:
+                produit = Produit.query.get_or_404(int(produit_ids[i]))
+                enregistrer_sortie(
+                    produit,
+                    quantite=float(quantites[i]),
+                    unite=unites[i] if i < len(unites) else "GESTION",
+                    depot_id=depot_id,
+                    tiers_id=tiers_id,
+                    reference=reference,
+                    motif=motif,
+                    utilisateur=current_user.email,
+                )
+                produits_modifies.append(produit)
+
+            for p in produits_modifies:
+                _alerter_si_sous_seuil(p)
+
+            nb = len(produits_modifies)
+            flash(f"{nb} sortie(s) enregistree(s) avec succes.", "success")
             return redirect(url_for("mouvements.liste"))
         except AccesRefuse as exc:
             flash(str(exc), "danger")
