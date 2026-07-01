@@ -8,7 +8,7 @@
 
 <form method="post" id="form-entree">
 
-    {{/* En-tete commun a toutes les lignes */}}
+    {# En-tete commun a toutes les lignes #}
     <div class="card card-kpi p-4 mb-3">
         <h6 class="text-muted fw-semibold mb-3">Informations du bon</h6>
         <div class="row g-3">
@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    {{/* Tableau des articles */}}
+    {# Tableau des articles #}
     <div class="card card-kpi p-4 mb-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="text-muted fw-semibold mb-0">Articles</h6>
@@ -72,7 +72,7 @@
                 </thead>
                 <tbody id="tbody-lignes">
 
-                    {{/* Ligne modele — cachee, jamais soumise (inputs desactives) */}}
+                    {# Ligne modele — cachee, jamais soumise (inputs desactives) #}
                     <tr id="ligne-modele" style="display:none" aria-hidden="true">
                         <td>
                             <select name="produit_id" class="form-select form-select-sm" disabled>
