@@ -19,6 +19,8 @@ services:
     startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     healthCheckPath: /auth/connexion
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"         # psycopg2-binary n'est pas encore compatible Python 3.14
       - key: SECRET_KEY
         generateValue: true     # Render génère une valeur aléatoire sécurisée
       - key: DATABASE_URL
